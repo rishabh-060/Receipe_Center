@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipes Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+    href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+    rel="stylesheet"
+    />
+</head>
+<body>
+    <div class="w-full min-h-screen bg-zinc-900 text-white p-10 ">
+        <div class="flex items-center justify-between mb-10 border-b-2 border-sky-400 md:pb-3 pb-2">
+            <h3 class="text-lg md:text-2xl" >Hello! <span class="text-xl md:text-4xl text-sky-400 font-bold" ><%= user.name %></span> 👋🏻</h3>
+            <div id="opts" class="hidden md:flex gap-3 md:gap-10 ">
+                <a class="bg-emerald-700 rounded-md px-3 py-1 text-sm font-semibold" href="/profile">Back to Profile</a> 
+                <a class="bg-red-600 rounded-md px-3 py-1 text-sm font-semibold" href="/logout">Logout</a>
+            </div>   
+            <div id="opt-btn" class="md:hidden inline">
+                <i class="ri-menu-line text-xl text-sky-400"></i>
+            </div>   
+        </div>
+
+        <div class="flex justify-center item-center">
+            <div class="flex items-center gap-14 justify-center mb-10 border-2 border-sky-400 rounded-full md:w-1/4 w-full px-4 md:px-10 py-1 md:py-3">
+                <a class="text-md md:text-lg font-semibold" href="/allposts"><i class="ri-home-3-line"></i></a>
+                <a class="text-sky-400 text-md md:text-lg font-semibold" href="/add-receipe"><i class="ri-image-edit-line"></i></a>
+                <a class="text-md md:text-lg font-semibold" href="/search"><i class="ri-search-2-line"></i></a>
+                <a class="text-md md:text-lg font-semibold" href="/profile"><i class="ri-user-line"></i></a>
+            </div>
+        </div>
+
+        <div class="mt-14 md:mt-20">
+            <h3 class="text-3xl mb-5" >Add Receipes</h3>
+            <form action="/post" method="post" class="flex flex-col gap-4 px-3">
+                <input class="resize-none px-4 py-3 md:w-80 outline-none bg-transparent border-b-2 border-sky-200 leading-6" type="text" name="title" placeholder="Receipe name" required>
+                <input class="resize-none px-4 py-3 md:w-80 outline-none bg-transparent border-b-2 border-sky-200 leading-6" type="file" name="image" required>
+                <textarea class="resize-none px-4 py-3 md:w-80 outline-none bg-transparent border-2 border-sky-200 leading-6 rounded-md" name="description" placeholder="description"></textarea>
+                <input class="px-4 py-1 text-center md:w-80 bg-blue-500 rounded-md mt-5" type="submit" value="Add Receipe">
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

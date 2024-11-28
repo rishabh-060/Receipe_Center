@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipes Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="w-full min-h-screen bg-zinc-900 text-white p-10 flex flex-col items-center justify-center gap-5">
+        <!-- <h3 class="mb-6"><a class="text-sky-400 text-left" href="/allposts">Skip</a> for now</h3> -->
+        <h3 class="text-3xl mb-8" >Login Here</h3>
+        <form action="/login" method="post" class="flex flex-col items-center justify-center gap-5 ">
+            <input class="px-4 py-1 text-center md:w-96 outline-none bg-transparent border-b-2 border-sky-400" type="email" placeholder="email" name="email">
+            <input class="px-4 py-1 text-center md:w-96 outline-none bg-transparent border-b-2 border-sky-400" type="password" placeholder="password" name="password">
+            <input class="px-4 py-1 text-center md:w-96 bg-blue-500 rounded-md mt-5" type="submit" value="Login Here">
+        </form>
+        <h3 class="mt-6">Dont't have an account? <a class="text-sky-400" href="/">Sign Up</a></h3>
+    </div>
+</body>
+</html>
