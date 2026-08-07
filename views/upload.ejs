@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipes Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="w-full min-h-screen bg-zinc-900 text-white p-10 flex flex-col items-center justify-center gap-5">
+        <h3 class="text-3xl mb-8" >Add Profile Picture</h3>
+        <form autocomplete="off" action="/upload" method="post" class="flex flex-col items-center justify-center gap-5 " enctype="multipart/form-data">
+            <input class="px-4 py-1 text-center md:w-96 outline-none bg-transparent border-b-2 border-sky-400" type="file" name="file">
+            <input class="px-4 py-1 text-center md:w-96 bg-blue-500 rounded-md mt-5" type="submit" value="Add Profile Picture">
+        </form>
+    </div>
+</body>
+</html>
+
+
+<!-- 
+const multer = require('multer')
+const crypto = require('crypto')
+const path = require('path')
+
+// disk storage
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, './public/images/uploads')
+    },
+    filename: function (req, file, cb) {
+        crypto.randomBytes(12, function (err, bytes){
+            const fn = bytes.toString("hex") + path.extname(file.originalname)
+
+            cb(null, fn)
+        })
+    }
+})
+  
+const upload = multer({ storage: storage })
+
+
+app.get('/test-multer', (req, res) => {
+    res.render('test')
+})
+
+app.post('/img-upload', upload.single('file'), (req, res) => {
+    console.log(req.file)
+})
+
+
+-->

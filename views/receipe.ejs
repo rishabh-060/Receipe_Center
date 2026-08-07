@@ -12,8 +12,13 @@
 </head>
 <body>
     <div class="w-full min-h-screen bg-zinc-900 text-white p-10 ">
-        <div class="flex items-center justify-between mb-10 border-b-2 border-sky-400 md:pb-3 pb-2">
-            <h3 class="text-lg md:text-2xl" >Hello! <span class="text-xl md:text-4xl text-sky-400 font-bold" ><%= user.name %></span> 👋🏻</h3>
+        <div class="flex items-center justify-between mb-6 border-b-2 border-sky-400 md:pb-3 pb-2">
+            <div class="flex items-start gap-3">
+                <div class="w-7 h-7 md:w-14 md:h-14 rounded-lg overflow-hidden border-2 border-sky-400">
+                    <img class="w-full h-full object-center object-cover" src="/images/uploads/<%= user.profilepic %>" alt="">
+                </div>
+                <h3 class="text-lg md:text-2xl" >Hello! <span class="text-xl md:text-4xl text-sky-400 font-bold" ><%= user.name %></span> 👋🏻</h3>
+            </div>
             <div id="opts" class="hidden md:flex gap-3 md:gap-10 ">
                 <a class="bg-emerald-700 rounded-md px-3 py-1 text-sm font-semibold" href="/profile">Back to Profile</a> 
                 <a class="bg-red-600 rounded-md px-3 py-1 text-sm font-semibold" href="/logout">Logout</a>
@@ -22,7 +27,7 @@
                 <i class="ri-menu-line text-xl text-sky-400"></i>
             </div>   
         </div>
-
+        
         <div class="flex justify-center item-center">
             <div class="flex items-center gap-14 justify-center mb-10 border-2 border-sky-400 rounded-full md:w-1/4 w-full px-4 md:px-10 py-1 md:py-3">
                 <a class="text-md md:text-lg font-semibold" href="/allposts"><i class="ri-home-3-line"></i></a>
