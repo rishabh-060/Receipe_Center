@@ -1,0 +1,211 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: #manual trigger
+
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create Deployment Package (without node_modules)
+        run: |
+          mkdir -p deploy
+          cp -r dist deploy/
+          cp -r src deploy/
+          cp package.json deploy/
+          cp .env.example deploy/ 2>/dev/null || echo ".env.example not found, skipping copy."
+
+          [ -f .env.example ] && cp .env.example deploy/ || echo ".env.example not found, skipping copy."
+          tar -czf deploy.tar.gz -C deploy .
+        
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deploy.tar.gz
+          retention-days: 1
+
+  deploy:
+    name: Deploy to EC2
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
+      - name: Deploy to EC2 via SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        
+        run: |
+          # Create SSH key file
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          # Copy the deployment package to the EC2 instance
+          scp -i private_key.pem -o StrictHostKeyChecking=no \
+            deploy.tar.gz ${EC2_USERNAME}@${EC2_HOST}:~/tmp/
+
+          # SSH into the EC2 instance and deploy
+          ssh -i private_key.pem -o StrictHostKeyChecking=no \
+            ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
+
+            # Navigate to the app directory
+            cd /var/www/node-app-ci-cd
+
+            # Fix Ownership first (important!)
+            echo "Fixing ownership of the application directory..."
+            sudo chown -R $USER:$USER /var/www/node-app-ci-cd
+
+            # Backup existing application
+            echo "Backing up existing application..."
+            if [ -d "dist" ]; then
+              timestamp=$(date +%Y%m%d%H%M%S)
+              mkdir -p backups
+              tar -czf backups/backup_$timestamp.tar.gz dist src package.json .env 2>/dev/null || true
+
+              # keep only the last 5 backups
+              ls -tp backups/backup_*.tar.gz 2>/dev/null | tail -n +6 | xargs -I {} rm -- {}
+            fi
+
+            # Extract new version (this will overwrite existing files)
+            echo "Extracting new version..."
+            tar --overwrite -xzf ~/tmp/deploy.tar.gz -C /var/www/node-app-ci-cd
+            rm ~/tmp/deploy.tar.gz
+
+            # Fix Ownership again after extraction
+            sudo chown -R $USER:$USER /var/www/node-app-ci-cd
+
+            # Install dependencies
+            echo "Installing dependencies..."
+            npm install
+
+            # Create .env file if it doesn't exist (only for the first deployment)
+            if [ ! -f ".env" ]; then
+              echo "NODE_ENV=production" > .env
+              echo "HOST=13.234.31.130" >> .env
+              echo "JWT_SECRET=@#$%^&DFGHJY&UIGYG%^&*(678%^Y&IYUBNYUHBHB$%$#$R%D%R" >> .env
+              echo "MONGO_URI=mongodb+srv://rv915238:qwerty%403435@scan-my-meal.8yr00w6.mongodb.net/recipe_center" >> .env
+              echo "PORT=8000" >> .env
+            fi
+
+            # Create logs directory
+            mkdir -p logs
+
+            # Zero downtime restart using pm2
+            echo "Restarting application with pm2..."
+            if pm2 describe node-app-ci-cd > /dev/null 2>&1; then
+              sudo pm2 reload node-app-ci-cd
+            else
+              sudo pm2 start npm --name recipe-center -- start
+            fi
+
+            # Save pm2 process list and configure startup
+            sudo pm2 save
+
+          EOF
+
+          # Clean up the private key file
+          rm private_key.pem
+
+      - name: Verify Deployment
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+
+        run: |
+          echo "Waiting for the application to start..."
+          sleep 10  # Wait for a few seconds to allow the application to start
+
+          # Check if the application responds via nginx (try multiple times)
+          for i in {1..2}; do
+            echo "Attempt $i: Checking application response..."
+            response=$(curl -s -o /dev/null -w "%{http_code}" http://${EC2_HOST} 2>/dev/null || echo "000")
+
+            if [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "302" ]; then
+              echo "Application is responding with HTTP status code: $response"
+              exit 0
+            else
+              echo "Application is not responding as expected. HTTP status code: $response"
+              sleep 5  # Wait before retrying
+            fi
+
+            echo "Got response code: $response, waiting for 5 seconds before retrying..."
+            sleep 5
+          done
+
+          echo "Application did not respond as expected after multiple attempts. Please check the server logs."
+          exit 1
+        
+      - name: Rollback on Failure
+        if: failure()
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        
+        run: |
+          echo "Deployment failed. Initiating rollback to previous version..."
+
+          # Create SSH key file
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          # SSH into the EC2 instance and perform rollback
+          ssh -i private_key.pem -o StrictHostKeyChecking=no \
+            ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
+
+            # Navigate to the app directory
+            cd /var/www/node-app-ci-cd
+
+            # Fix Ownership first (important!)
+            echo "Fixing ownership of the application directory..."
+            sudo chown -R $USER:$USER /var/www/node-app-ci-cd
+
+            # Find the most recent backup and restore it
+            latest_backup=$(ls -t backups/backup_*.tar.gz 2>/dev/null | head -n 1)
+
+
+            if [ -n "$latest_backup" ]; then
+              echo "Restoring from backup: $latest_backup"
+              tar -xzf "$latest_backup" -C /var/www/node-app-ci-cd
+
+              npm install
+              # Restart the application using pm2
+              echo "Restarting application with pm2..."
+              pm2 reload node-app-ci-cd || pm2 start npm --name recipe-center -- start
+              pm2 save
+            else
+              echo "No backups found. Rollback cannot be performed."
+              exit 1
+            fi
+          
+          EOF
+
+
+          # Clean up the private key file
+          rm private_key.pem
