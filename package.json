@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js",
-    "build": "tsc"
+    "check": "node --check app.js && node --check models/user.js && node --check models/post.js && node --check config/multerConfig.js",
+    "build": "npm run check"
   },
   "keywords": [],
   "author": "",
