@@ -83,11 +83,11 @@ jobs:
 
           # Ensure remote temp folder exists before upload
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
-            ${EC2_USERNAME}@${EC2_HOST} "mkdir -p ~/tmp"
+            ${EC2_USERNAME}@${HOST} "mkdir -p ~/tmp"
 
           # Copy the deployment package to the EC2 instance
           scp -i private_key.pem -o StrictHostKeyChecking=no \
-            deploy.tar.gz ${EC2_USERNAME}@${EC2_HOST}:~/tmp/deploy.tar.gz
+            deploy.tar.gz ${EC2_USERNAME}@${HOST}:~/tmp/deploy.tar.gz
 
           # SSH into the EC2 instance and deploy
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
