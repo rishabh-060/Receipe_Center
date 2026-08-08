@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24.x'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
@@ -29,14 +30,24 @@ jobs:
       - name: Create Deployment Package (without node_modules)
         run: |
           mkdir -p deploy
-          cp -r dist deploy/
-          cp -r src deploy/
+          if [ -d dist ]; then
+            cp -r dist deploy/
+          else
+            echo "dist directory not found, skipping copy."
+          fi
+          if [ -d src ]; then
+            cp -r src deploy/
+          else
+            echo "src directory not found, skipping copy."
+          fi
           cp package.json deploy/
-          cp .env.example deploy/ 2>/dev/null || echo ".env.example not found, skipping copy."
-
-          [ -f .env.example ] && cp .env.example deploy/ || echo ".env.example not found, skipping copy."
+          if [ -f .env.example ]; then
+            cp .env.example deploy/
+          else
+            echo ".env.example not found, skipping copy."
+          fi
           tar -czf deploy.tar.gz -C deploy .
-        
+      
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
