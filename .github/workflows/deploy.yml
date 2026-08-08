@@ -76,13 +76,18 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
+          # Sanitize host to remove protocol scheme and trailing slash
+          HOST="${EC2_HOST#http://}"
+          HOST="${HOST#https://}"
+          HOST="${HOST%/}"
+
           # Copy the deployment package to the EC2 instance
           scp -i private_key.pem -o StrictHostKeyChecking=no \
-            deploy.tar.gz ${EC2_USERNAME}@${EC2_HOST}:~/tmp/
+            deploy.tar.gz ${EC2_USERNAME}@${HOST}:~/tmp/
 
           # SSH into the EC2 instance and deploy
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
-            ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
+            ${EC2_USERNAME}@${HOST} << 'EOF'
 
             # Navigate to the app directory
             cd /var/www/node-app-ci-cd
@@ -147,13 +152,17 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
 
         run: |
+          HOST="${EC2_HOST#http://}"
+          HOST="${HOST#https://}"
+          HOST="${HOST%/}"
+
           echo "Waiting for the application to start..."
           sleep 10  # Wait for a few seconds to allow the application to start
 
           # Check if the application responds via nginx (try multiple times)
           for i in {1..2}; do
             echo "Attempt $i: Checking application response..."
-            response=$(curl -s -o /dev/null -w "%{http_code}" http://${EC2_HOST} 2>/dev/null || echo "000")
+            response=$(curl -s -o /dev/null -w "%{http_code}" http://${HOST} 2>/dev/null || echo "000")
 
             if [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "302" ]; then
               echo "Application is responding with HTTP status code: $response"
@@ -184,9 +193,14 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
+          # Sanitize host to remove protocol scheme and trailing slash
+          HOST="${EC2_HOST#http://}"
+          HOST="${HOST#https://}"
+          HOST="${HOST%/}"
+
           # SSH into the EC2 instance and perform rollback
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
-            ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
+            ${EC2_USERNAME}@${HOST} << 'EOF'
 
             # Navigate to the app directory
             cd /var/www/node-app-ci-cd
